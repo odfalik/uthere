@@ -1,0 +1,16 @@
+[project]
+name = "uthere"
+version = "0.1.0"
+description = "Camera-based user presence detection - MCP server & Claude Code hook"
+requires-python = ">=3.11"
+dependencies = [
+    "opencv-python>=4.8",
+    "mcp[cli]>=1.0",
+]
+
+[project.scripts]
+uthere-server = "uthere.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
