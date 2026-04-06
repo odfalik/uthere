@@ -1,4 +1,4 @@
-# uthere
+# u there?
 
 Camera-based presence detection for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Uses your webcam to check if you're sitting at your computer.
 
