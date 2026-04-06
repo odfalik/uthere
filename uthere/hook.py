@@ -1,4 +1,4 @@
-"""Claude Code Stop hook — checks if the user is present before handing back control.
+"""Claude Code Stop hook -- checks if the user is present before handing back control.
 
 Flow:
   1. Agent finishes a response and is about to stop.
@@ -14,13 +14,22 @@ Anti-loop safeguard:
 """
 
 import json
+import os
 import sys
 import tempfile
 import time
 from pathlib import Path
 
 COOLDOWN_FILE = Path(tempfile.gettempdir()) / "uthere_hook_cooldown"
-COOLDOWN_SECONDS = 60
+COOLDOWN_SECONDS = int(os.environ.get("UTHERE_COOLDOWN_SECONDS", "60"))
+
+HOOK_BLOCK_MESSAGE = os.environ.get(
+    "UTHERE_HOOK_MESSAGE",
+    "The user is not at their computer right now (no face detected via webcam). "
+    "If you have remaining work to do on the current task, keep going. "
+    "If you're blocked and truly need user input, send them a DM on Slack to get their attention. "
+    "If you've completed everything, you may stop.",
+)
 
 
 def main() -> None:
@@ -29,7 +38,7 @@ def main() -> None:
         try:
             last_block = float(COOLDOWN_FILE.read_text().strip())
             if time.time() - last_block < COOLDOWN_SECONDS:
-                # Recently blocked — allow stop, clear cooldown
+                # Recently blocked -- allow stop, clear cooldown
                 COOLDOWN_FILE.unlink(missing_ok=True)
                 return
         except (ValueError, OSError):
@@ -41,24 +50,19 @@ def main() -> None:
     try:
         present = detect_user_presence()
     except Exception:
-        # Camera issue — don't block the agent
+        # Camera issue -- don't block the agent
         return
 
     if present:
-        # User is here — allow stop
+        # User is here -- allow stop
         COOLDOWN_FILE.unlink(missing_ok=True)
         return
 
-    # User not present — block stop, record cooldown
+    # User not present -- block stop, record cooldown
     COOLDOWN_FILE.write_text(str(time.time()))
     output = {
         "decision": "block",
-        "reason": (
-            "The user is not at their computer right now (no face detected via webcam). "
-            "If you have remaining work to do on the current task, keep going. "
-            "If you're blocked and truly need user input, send them a DM on Slack to get their attention. "
-            "If you've completed everything, you may stop."
-        ),
+        "reason": HOOK_BLOCK_MESSAGE,
     }
     print(json.dumps(output))
 

@@ -24,10 +24,10 @@ def detect_user_presence(warmup_frames: int = 10, check_frames: int = 3) -> bool
     """Capture from the webcam and detect if a face is present.
 
     Uses MediaPipe BlazeFace (a lightweight neural network) for much better
-    accuracy than Haar cascades — handles glasses, angles, and varied lighting.
+    accuracy than Haar cascades -- handles glasses, angles, and varied lighting.
 
     Takes several warmup frames to let the camera adjust exposure,
-    then checks multiple frames — returns True if ANY frame contains a face.
+    then checks multiple frames -- returns True if ANY frame contains a face.
 
     Raises RuntimeError if the camera cannot be opened or read.
     """
@@ -49,7 +49,7 @@ def detect_user_presence(warmup_frames: int = 10, check_frames: int = 3) -> bool
         for _ in range(warmup_frames):
             cap.read()
 
-        # Check multiple frames — any face in any frame = present
+        # Check multiple frames -- any face in any frame = present
         for _ in range(check_frames):
             ret, frame = cap.read()
             if not ret or frame is None:
