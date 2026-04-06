@@ -73,7 +73,6 @@ All configuration is through environment variables. Set them in your shell profi
 | `UTHERE_AWAY_MESSAGE` | `"No face detected. User appears to be away..."` | MCP tool message when no face is detected |
 | `UTHERE_PRESENT_MESSAGE` | `"User is at their computer."` | MCP tool message when face is detected |
 | `UTHERE_HOOK_MESSAGE` | `"The user is not at their computer right now..."` | Message sent to the agent when the stop hook blocks |
-| `UTHERE_COOLDOWN_SECONDS` | `60` | Seconds before the stop hook can block again |
 
 Example using Claude Code's env settings:
 

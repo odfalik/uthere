@@ -8,20 +8,19 @@ Flow:
      can keep working autonomously.
 
 Anti-loop safeguard:
-  After blocking once, a cooldown file is written. If the agent tries to
-  stop again within COOLDOWN_SECONDS, the stop is allowed unconditionally
-  to prevent infinite block cycles.
+  The hook reads the last assistant message from stdin. If the agent was
+  already told the user is away and is trying to stop again, it has nothing
+  left to do -- let it stop. No temp files, fully stateless.
 """
 
 import json
 import os
 import sys
-import tempfile
-import time
-from pathlib import Path
 
-COOLDOWN_FILE = Path(tempfile.gettempdir()) / "uthere_hook_cooldown"
-COOLDOWN_SECONDS = int(os.environ.get("UTHERE_COOLDOWN_SECONDS", "60"))
+# Sentinel substring used to detect if we already blocked once this cycle.
+# If the block message appears in the agent's last response, it was already
+# nudged and chose to stop anyway -- let it through.
+_BLOCK_SENTINEL = "no face detected via webcam"
 
 HOOK_BLOCK_MESSAGE = os.environ.get(
     "UTHERE_HOOK_MESSAGE",
@@ -33,16 +32,17 @@ HOOK_BLOCK_MESSAGE = os.environ.get(
 
 
 def main() -> None:
-    # Anti-loop: if we blocked recently, allow this stop
-    if COOLDOWN_FILE.exists():
-        try:
-            last_block = float(COOLDOWN_FILE.read_text().strip())
-            if time.time() - last_block < COOLDOWN_SECONDS:
-                # Recently blocked -- allow stop, clear cooldown
-                COOLDOWN_FILE.unlink(missing_ok=True)
-                return
-        except (ValueError, OSError):
-            COOLDOWN_FILE.unlink(missing_ok=True)
+    # Read the hook payload from stdin
+    try:
+        payload = json.loads(sys.stdin.read())
+    except (json.JSONDecodeError, ValueError):
+        return
+
+    # Anti-loop: if the agent's last message already references our block
+    # message, it was already nudged and chose to stop -- let it through.
+    last_message = payload.get("last_assistant_message", "")
+    if _BLOCK_SENTINEL in last_message.lower():
+        return
 
     # Import here so camera only initializes when needed
     from uthere.detect import detect_user_presence
@@ -54,12 +54,9 @@ def main() -> None:
         return
 
     if present:
-        # User is here -- allow stop
-        COOLDOWN_FILE.unlink(missing_ok=True)
         return
 
-    # User not present -- block stop, record cooldown
-    COOLDOWN_FILE.write_text(str(time.time()))
+    # User not present -- block stop
     output = {
         "decision": "block",
         "reason": HOOK_BLOCK_MESSAGE,
