@@ -18,7 +18,11 @@ def is_user_present() -> dict:
         present = detect_user_presence()
         return {
             "present": present,
-            "message": "User is at their computer." if present else "No face detected — user appears to be away.",
+            "message": (
+                "User is at their computer."
+                if present
+                else "No face detected — user appears to be away. If you need their input, try reaching them on Slack."
+            ),
         }
     except RuntimeError as e:
         return {

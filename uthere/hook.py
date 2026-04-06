@@ -56,6 +56,7 @@ def main() -> None:
         "reason": (
             "The user is not at their computer right now (no face detected via webcam). "
             "If you have remaining work to do on the current task, keep going. "
+            "If you're blocked and truly need user input, send them a DM on Slack to get their attention. "
             "If you've completed everything, you may stop."
         ),
     }
