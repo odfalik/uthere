@@ -4,8 +4,8 @@ Camera-based presence detection for [Claude Code](https://docs.anthropic.com/en/
 
 Two components:
 
-1. **MCP server** -- exposes an `is_user_present` tool that Claude can call anytime to check if you're there
-2. **Stop hook** -- automatically keeps Claude working when you step away, so it doesn't stop and wait for input from an empty chair
+1. **MCP server** exposes an `is_user_present` tool that Claude can call anytime to check if you're there
+2. **Stop hook** automatically keeps Claude working when you step away, so it doesn't stop and wait for input from an empty chair
 
 Uses [MediaPipe BlazeFace](https://ai.google.dev/edge/mediapipe/solutions/vision/face_detector) for fast, lightweight face detection. Works well with glasses, varied lighting, and different angles. The model (~200KB) is downloaded automatically on first run.
 
