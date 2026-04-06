@@ -8,19 +8,18 @@ Flow:
      can keep working autonomously.
 
 Anti-loop safeguard:
-  The hook reads the last assistant message from stdin. If the agent was
-  already told the user is away and is trying to stop again, it has nothing
-  left to do -- let it stop. No temp files, fully stateless.
+  A flag file is written when the hook blocks. On the next invocation, if
+  the flag exists, the hook allows the stop and removes the flag. This
+  gives the agent exactly one nudge per cycle.
 """
 
 import json
 import os
 import sys
+import tempfile
+from pathlib import Path
 
-# Sentinel substring used to detect if we already blocked once this cycle.
-# If the block message appears in the agent's last response, it was already
-# nudged and chose to stop anyway -- let it through.
-_BLOCK_SENTINEL = "no face detected via webcam"
+BLOCK_FLAG = Path(tempfile.gettempdir()) / "uthere_hook_blocked"
 
 HOOK_BLOCK_MESSAGE = os.environ.get(
     "UTHERE_HOOK_MESSAGE",
@@ -32,16 +31,9 @@ HOOK_BLOCK_MESSAGE = os.environ.get(
 
 
 def main() -> None:
-    # Read the hook payload from stdin
-    try:
-        payload = json.loads(sys.stdin.read())
-    except (json.JSONDecodeError, ValueError):
-        return
-
-    # Anti-loop: if the agent's last message already references our block
-    # message, it was already nudged and chose to stop -- let it through.
-    last_message = payload.get("last_assistant_message", "")
-    if _BLOCK_SENTINEL in last_message.lower():
+    # Anti-loop: if we already blocked once, let the agent stop
+    if BLOCK_FLAG.exists():
+        BLOCK_FLAG.unlink(missing_ok=True)
         return
 
     # Import here so camera only initializes when needed
@@ -56,7 +48,8 @@ def main() -> None:
     if present:
         return
 
-    # User not present -- block stop
+    # User not present -- block stop, set flag
+    BLOCK_FLAG.touch()
     output = {
         "decision": "block",
         "reason": HOOK_BLOCK_MESSAGE,
